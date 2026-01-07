@@ -1,0 +1,7 @@
+Saber una sugerencia de shows que podrían interesar.
+Son los shows que fueron amigos del usuario con los que compartieron entradas pero el usuario no asistió.
+
+MATCH (u:Usuarios {username: "rodriP"})-[:SON_AMIGUES]->(amigo:Usuarios)-[:COMPRO_ENTRADA]->(s:Show)
+WHERE NOT (u)-[:COMPRO_ENTRADA]->(s)
+RETURN DISTINCT s
+

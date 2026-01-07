@@ -1,0 +1,35 @@
+server:
+  port: 8080
+  error:
+    whitelabel:
+      enabled: false
+    include-message: always
+spring:
+  datasource:
+    url: jdbc:postgresql://0.0.0.0:5432/noches_magicas
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: password
+  data:
+    mongodb:
+      uri: mongodb://grupo4:admin@localhost:27017/noches_magicas?authSource=admin
+
+
+  jpa:
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+
+# Para activar el Trace
+logging:
+  level:
+    root: INFO

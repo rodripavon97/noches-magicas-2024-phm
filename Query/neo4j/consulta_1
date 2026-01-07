@@ -1,0 +1,5 @@
+Saber qué usuarios compraron tickets para un determinado show y fecha.
+
+ MATCH (s:Show {nombreRecital:'Power Up Tour'})-[r:COMPRO_ENTRADA]-(u:Usuarios)
+ WHERE date(r.fechaEntrada) = date('2024-10-23')
+ RETURN u

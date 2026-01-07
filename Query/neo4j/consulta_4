@@ -1,0 +1,6 @@
+Saber qué shows tienen más de 4 reservas.
+
+MATCH (u:Usuarios)-[r:COMPRO_ENTRADA]->(s:Show)
+WITH s, COUNT(r) AS numTickets
+WHERE numTickets > 4
+RETURN s, numTickets

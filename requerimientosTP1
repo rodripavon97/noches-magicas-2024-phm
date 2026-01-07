@@ -1,0 +1,63 @@
+
+Requerimiento 1 Vistas
+SELECT
+	show_id,numero_entrada,funcion_id,entradas_compradas_id, EXTRACT(YEAR FROM fecha_entrada) AS año
+FROM entrada 
+INNER JOIN usuario_comun_entradas_compradas ON id = entradas_compradas_id
+WHERE usuario_comun_id = 2
+AND EXTRACT(YEAR FROM fecha_entrada) = EXTRACT(YEAR FROM CURRENT_DATE);
+
+Requerimiento 2 Triggers
+CREATE TABLE HistorialCambiosSaldo (
+    id SERIAL PRIMARY KEY,
+    id_usuario INTEGER,
+    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    saldo_anterior DOUBLE PRECISION,
+    nuevo_saldo DOUBLE PRECISION,
+    FOREIGN KEY (id_usuario) REFERENCES usuario_comun(id) 
+);
+
+
+CREATE OR REPLACE FUNCTION registrar_cambio_saldo()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO HistorialCambiosSaldo (id_usuario, saldo_anterior, nuevo_saldo)
+    VALUES (NEW.id, OLD.saldo, NEW.saldo); 
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER after_update_saldo
+AFTER UPDATE OF saldo ON usuario_comun
+FOR EACH ROW
+EXECUTE FUNCTION registrar_cambio_saldo();
+
+SELECT fecha_modificacion, saldo_anterior, nuevo_saldo
+FROM HistorialCambiosSaldo
+WHERE id_usuario = 1
+ORDER BY fecha_modificacion DESC;
+
+Vistas
+Requerimiento 3
+SELECT usuario_comun_id,
+    count(*) AS entradas_compradas_id
+   FROM usuario_comun_entradas_compradas
+  GROUP BY usuario_comun_id
+ HAVING count(*) > 1;
+
+
+Constraints
+Requerimiento 4
+ALTER TABLE instalacion 
+ALTER COLUMN costo_fijo SET NOT NULL
+UPDATE instalacion SET costo_fijo = 300000.00 WHERE id IN(2)
+
+Vistas
+Requerimiento 5
+SELECT i.id, i.nombre, COUNT(s.id) AS cantidad_de_shows
+FROM Instalacion i
+JOIN Show s ON i.id = s.instalacion_id
+GROUP BY i.id, i.nombre
+HAVING COUNT(s.id) > 2;
+

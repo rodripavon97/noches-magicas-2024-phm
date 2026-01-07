@@ -1,0 +1,6 @@
+Saber qué usuarios tienen más de 4 tickets.
+
+MATCH (u:Usuarios)-[r:COMPRO_ENTRADA]->(s:Show)
+WITH u, COUNT(r) AS numTickets
+WHERE numTickets > 4
+RETURN u, numTickets
