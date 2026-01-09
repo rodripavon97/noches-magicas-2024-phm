@@ -382,62 +382,62 @@ class Bootstrap : InitializingBean {
         )
 
         show1.agregarFuncion(
-            LocalDate.of(2024, 10, 23),
-            LocalTime.of(21, 30, 40),
-            instalacionRepository.findById(show1.instalacionId).get()
-        )
-        show1.agregarFuncion(
-            LocalDate.of(2024, 10, 24),
-            LocalTime.of(21, 30, 40),
-            instalacionRepository.findById(show1.instalacionId).get()
-        )
-        show1.agregarFuncion(
-            LocalDate.of(2024, 10, 26),
-            LocalTime.of(21, 30, 40),
-            instalacionRepository.findById(show1.instalacionId).get()
-        )
+                LocalDate.now().plusMonths(1),
+                LocalTime.of(21, 30, 40),
+                instalacionRepository.findById(show1.instalacionId).get()
+            )
+            show1.agregarFuncion(
+                LocalDate.now().plusMonths(1).plusDays(1),
+                LocalTime.of(21, 30, 40),
+                instalacionRepository.findById(show1.instalacionId).get()
+            )
+            show1.agregarFuncion(
+                LocalDate.now().plusMonths(1).plusDays(3),
+                LocalTime.of(21, 30, 40),
+                instalacionRepository.findById(show1.instalacionId).get()
+            )
+            show2.agregarFuncion(
+                LocalDate.now().plusMonths(2),
+                LocalTime.of(21, 30, 40),
+                instalacionRepository.findById(show2.instalacionId).get()
+            )
         show2.agregarFuncion(
-            LocalDate.of(2024, 7, 23),
+            LocalDate.of(2027, 7, 24),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show2.instalacionId).get()
         )
         show2.agregarFuncion(
-            LocalDate.of(2024, 7, 24),
-            LocalTime.of(21, 30, 40),
-            instalacionRepository.findById(show2.instalacionId).get()
-        )
-        show2.agregarFuncion(
-            LocalDate.of(2024, 7, 26),
+            LocalDate.of(2027, 7, 26),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show2.instalacionId).get()
         )
         show3.agregarFuncion(
-            LocalDate.of(2024, 1, 15),
+            LocalDate.of(2023, 1, 15),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show3.instalacionId).get()
         )
         show4.agregarFuncion(
-            LocalDate.of(2024, 9, 14),
+            LocalDate.of(2028, 9, 14),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show4.instalacionId).get()
         )
         show5.agregarFuncion(
-            LocalDate.of(2024, 8, 30),
+            LocalDate.of(2028, 8, 30),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show5.instalacionId).get()
         )
         show6.agregarFuncion(
-            LocalDate.of(2024, 10, 18),
+            LocalDate.of(2026, 10, 18),
             LocalTime.of(21, 30, 40),
             instalacionRepository.findById(show6.instalacionId).get()
         )
         show7.agregarFuncion(
-            LocalDate.of(2023, 10, 9),
+            LocalDate.of(2028, 10, 9),
             LocalTime.of(21, 30, 0),
             instalacionRepository.findById(show7.instalacionId).get()
         )
         show8.agregarFuncion(
-            LocalDate.of(2023, 2, 2),
+            LocalDate.of(2024, 2, 2),
             LocalTime.of(21, 30, 0),
             instalacionRepository.findById(show8.instalacionId).get()
         )

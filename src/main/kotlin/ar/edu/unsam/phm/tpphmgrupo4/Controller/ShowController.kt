@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @CrossOrigin(origins = ["*"], methods= [RequestMethod.GET, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.POST])
 
-class ShowController {
+class       ShowController {
     @Autowired
     lateinit var showService: ServiceShow
 

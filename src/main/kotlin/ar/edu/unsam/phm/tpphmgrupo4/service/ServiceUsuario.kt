@@ -42,9 +42,16 @@ class ServiceUsuario {
         return repositorioUsuarioNeo.findUsuarioNodoByUsername(nombre)
     }
 
-    fun getCarritoById(id: Long): Carrito {
-        return repositorioCarrito.findById(id).get()
+    fun getCarritoById(idUsuario: Long): Carrito {
+        return repositorioCarrito.findById(idUsuario)
+            .orElseGet {
+                val usuario = repositorioUsuarioComun.findById(idUsuario)
+                    .orElseThrow { RuntimeException("Usuario no encontrado") }
+                val carritoNuevo = Carrito(usuario.id.toInt(), mutableListOf())
+                repositorioCarrito.save(carritoNuevo)
+            }
     }
+
 
     @Transactional(Transactional.TxType.NEVER)
     fun loginUsuario(user: LoginDTO): Any {
