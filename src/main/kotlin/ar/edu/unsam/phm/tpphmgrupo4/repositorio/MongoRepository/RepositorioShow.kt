@@ -23,4 +23,16 @@
 
         fun findDetailesById(id : String): Show
 
+        /**
+         * Encuentra shows por lista de IDs y filtros de artista/locación.
+         * Optimizado para filtrar shows donde van amigos sin cargar todos en memoria.
+         */
+        @Query("{" +
+                "'_id': {\$in: ?0}, " +
+                "'nombreBanda': {\$regex: ?1, \$options: 'i'}, " +
+                "'nombreInstalacion': {\$regex: ?2, \$options: 'i'}, " +
+                "'funciones': {\$elemMatch: {'fecha': {\$gte: ?3}}}" +
+                "}")
+        fun findShowsByIdsAndFilters(showIds: List<String>, artista: String?, locacion: String?, fecha: LocalDate): List<Show>
+
     }

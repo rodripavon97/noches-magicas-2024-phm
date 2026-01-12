@@ -10,11 +10,19 @@ import ar.edu.unsam.phm.tpphmgrupo4.service.ServiceShow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
-
+/**
+ * Controller refactorizado siguiendo principios SOLID.
+ * Mantiene su enfoque en operaciones de Show, delegando cálculos
+ * complejos al RecaudacionService (a través de ServiceShow).
+ * 
+ * Mejoras aplicadas:
+ * - ServiceShow ahora delega responsabilidades financieras a RecaudacionService
+ * - Mejor separación de concerns
+ * - Código más mantenible y testeable
+ */
 @RestController
 @CrossOrigin(origins = ["*"], methods= [RequestMethod.GET, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.POST])
-
-class       ShowController {
+class ShowController {
     @Autowired
     lateinit var showService: ServiceShow
 
@@ -30,11 +38,15 @@ class       ShowController {
 
     @GetMapping("/show-detalle/{id}")
     fun ShowPorID(@PathVariable id: String): ShowDetalleDTO {
-        return showService.getShowDetalles(id,null)
+        return showService.getShowDetalles(id, null)
     }
 
     @GetMapping("/admin/shows")
-    fun getAdminShows(@RequestParam(required = false, defaultValue = "") artista: String?, @RequestParam(required = false, defaultValue = "") locacion: String?,  @RequestParam(required = false, defaultValue = "") id: Long?): List<ShowAdminDTO> {
+    fun getAdminShows(
+        @RequestParam(required = false, defaultValue = "") artista: String?, 
+        @RequestParam(required = false, defaultValue = "") locacion: String?,  
+        @RequestParam(required = false, defaultValue = "") id: Long?
+    ): List<ShowAdminDTO> {
         return showService.getShowAdmin(id, artista, locacion)
     }
 
@@ -46,7 +58,6 @@ class       ShowController {
     @PostMapping("/show/{id}/nueva-funcion")
     fun agregrarFuncion(@PathVariable id: String, @RequestBody dto: FuncionDTO): Funcion {
         return showService.crearFuncion(id, dto)
-
     }
 
     @DeleteMapping("/show/{id}")
@@ -58,6 +69,7 @@ class       ShowController {
     fun editarDatos(@PathVariable id: String, @RequestBody showDTO: ShowDTO) {
         showService.editarDatos(id, showDTO.nombreBanda, showDTO.nombreRecital)
     }
+
     @PostMapping("/show/{idShow}/log/{idUsuario}")
     fun registrarLogClick(
         @PathVariable idShow: String,
@@ -65,6 +77,4 @@ class       ShowController {
     ): ShowDetalleDTO {
         return showService.getShowDetalles(idShow, idUsuario)
     }
-
-
 }
