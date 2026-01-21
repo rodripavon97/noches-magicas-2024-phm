@@ -12,54 +12,37 @@ import org.springframework.stereotype.Service
 
 /**
  * Servicio responsable de la gestión del carrito de compras.
- * Principio SRP: Una sola responsabilidad - manejar operaciones del carrito
+ * 
+ * Principios aplicados:
+ * - SRP: Una sola responsabilidad - manejar operaciones del carrito
+ * - DIP: Depende de abstracciones (repositorios inyectados)
  */
 @Service
-class CarritoService {
-    @Autowired
-    lateinit var repositorioCarrito: RepositorioCarrito
-    
-    @Autowired
-    lateinit var repositorioUsuarioComun: RepositorioUsuarioComun
-    
-    @Autowired
-    lateinit var repositorioShow: RepositorioShow
-    
-    @Autowired
-    lateinit var repositorioEntrada: RepositorioEntradas
+class CarritoService(
+    private val repositorioCarrito: RepositorioCarrito,
+    private val repositorioUsuarioComun: RepositorioUsuarioComun,
+    private val repositorioShow: RepositorioShow,
+    private val repositorioEntrada: RepositorioEntradas
+) {
 
-    /**
-     * Obtiene el carrito de un usuario, creándolo si no existe.
-     * @param idUsuario ID del usuario
-     * @return Carrito del usuario
-     */
     fun getCarritoById(idUsuario: Long): Carrito {
         return repositorioCarrito.findById(idUsuario)
             .orElseGet {
                 val usuario = repositorioUsuarioComun.findById(idUsuario)
-                    .orElseThrow { RuntimeException("Usuario no encontrado") }
+                    .orElseThrow { NoSuchElementException("Usuario no encontrado con ID: $idUsuario") }
                 val carritoNuevo = Carrito(usuario.id.toInt(), mutableListOf())
                 repositorioCarrito.save(carritoNuevo)
             }
     }
 
-    /**
-     * Agrega entradas al carrito de un usuario.
-     * Optimizado: Query filtrada en DB en lugar de filtrar en memoria.
-     * @param idUsuario ID del usuario
-     * @param idShow ID del show
-     * @param idFuncion Índice de la función
-     * @param cantidad Cantidad de entradas a agregar
-     * @param ubi Ubicación de las entradas
-     */
     fun agregarAlCarrito(idUsuario: Long, idShow: String, idFuncion: Int, cantidad: Int, ubi: Ubicacion) {
         require(cantidad > 0) { "La cantidad debe ser mayor que cero" }
         
         val carrito = getCarritoById(idUsuario)
-        val show = repositorioShow.findById(idShow).get()
+        val show = repositorioShow.findById(idShow)
+            .orElseThrow { NoSuchElementException("Show no encontrado con ID: $idShow") }
         val funcion = show.funciones[idFuncion]
         
-        // Query optimizada: filtra en DB en lugar de memoria
         val entradasDisponibles = repositorioEntrada.findEntradasDisponibles(idShow, funcion.id, ubi)
         
         if (entradasDisponibles.size < cantidad) {
@@ -74,19 +57,10 @@ class CarritoService {
         repositorioEntrada.saveAll(entradasCarrito)
     }
 
-    /**
-     * Obtiene las entradas en el carrito de un usuario.
-     * @param idUsuario ID del usuario
-     * @return Lista de entradas en el carrito
-     */
     fun obtenerEntradasCarrito(idUsuario: Long): List<Entrada> {
         return getCarritoById(idUsuario).items
     }
 
-    /**
-     * Vacía el carrito de un usuario.
-     * @param idUsuario ID del usuario
-     */
     fun vaciarCarrito(idUsuario: Long) {
         val carrito = getCarritoById(idUsuario)
         carrito.items.clear()

@@ -12,19 +12,21 @@ import org.springframework.web.bind.annotation.*
 
 /**
  * Controller refactorizado siguiendo principios SOLID.
- * Mantiene su enfoque en operaciones de Show, delegando cálculos
- * complejos al RecaudacionService (a través de ServiceShow).
+ * 
+ * Principios aplicados:
+ * - SRP: Enfocado en operaciones de Show
+ * - DIP: Depende de abstracción (ServiceShow inyectado)
  * 
  * Mejoras aplicadas:
- * - ServiceShow ahora delega responsabilidades financieras a RecaudacionService
+ * - Constructor injection para mejor testabilidad
+ * - ServiceShow delega responsabilidades financieras a RecaudacionService
  * - Mejor separación de concerns
- * - Código más mantenible y testeable
  */
 @RestController
 @CrossOrigin(origins = ["*"], methods= [RequestMethod.GET, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.POST])
-class ShowController {
-    @Autowired
-    lateinit var showService: ServiceShow
+class ShowController(
+    private val showService: ServiceShow
+) {
 
     @GetMapping("/shows")
     fun getShowsAll(
@@ -33,12 +35,12 @@ class ShowController {
         @RequestParam(required = false, defaultValue = "") locacion: String?,
         @RequestParam(required = false) conAmigos: Boolean?
     ): List<ShowDTO> {
-        return showService.getShows(id, artista, locacion, conAmigos)
+        return showService.buscarShows(id, artista, locacion, conAmigos)
     }
 
     @GetMapping("/show-detalle/{id}")
     fun ShowPorID(@PathVariable id: String): ShowDetalleDTO {
-        return showService.getShowDetalles(id, null)
+        return showService.obtenerDetallesShow(id, null)
     }
 
     @GetMapping("/admin/shows")
@@ -47,12 +49,12 @@ class ShowController {
         @RequestParam(required = false, defaultValue = "") locacion: String?,  
         @RequestParam(required = false, defaultValue = "") id: Long?
     ): List<ShowAdminDTO> {
-        return showService.getShowAdmin(id, artista, locacion)
+        return showService.buscarShowsParaAdmin(id, artista, locacion)
     }
 
     @PostMapping("/show/{idShow}/fila-espera/{idUsuario}")
     fun agregrarPersonaEnEspera(@PathVariable idShow: String, @PathVariable idUsuario: Long): UsuarioComun {
-        return showService.agregarAUsuarioAEspera(idShow, idUsuario)
+        return showService.agregarUsuarioAListaEspera(idShow, idUsuario)
     }
 
     @PostMapping("/show/{id}/nueva-funcion")
@@ -62,12 +64,12 @@ class ShowController {
 
     @DeleteMapping("/show/{id}")
     fun eliminarShow(@PathVariable id: String) {
-        showService.deleteShow(id)
+        showService.eliminarShow(id)
     }
 
     @PatchMapping("/show/{id}")
     fun editarDatos(@PathVariable id: String, @RequestBody showDTO: ShowDTO) {
-        showService.editarDatos(id, showDTO.nombreBanda, showDTO.nombreRecital)
+        showService.actualizarDatosShow(id, showDTO.nombreBanda, showDTO.nombreRecital)
     }
 
     @PostMapping("/show/{idShow}/log/{idUsuario}")
@@ -75,6 +77,6 @@ class ShowController {
         @PathVariable idShow: String,
         @PathVariable idUsuario: Long
     ): ShowDetalleDTO {
-        return showService.getShowDetalles(idShow, idUsuario)
+        return showService.obtenerDetallesShow(idShow, idUsuario)
     }
 }

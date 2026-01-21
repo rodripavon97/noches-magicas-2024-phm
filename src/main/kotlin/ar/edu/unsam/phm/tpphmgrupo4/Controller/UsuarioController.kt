@@ -10,36 +10,28 @@ import org.springframework.web.bind.annotation.*
 
 /**
  * Controller refactorizado siguiendo principios SOLID.
- * Ahora utiliza servicios especializados en lugar de un único ServiceUsuario monolítico.
+ * 
+ * Principios aplicados:
+ * - SRP: Cada endpoint tiene una responsabilidad clara
+ * - DIP: Depende de abstracciones (servicios inyectados)
+ * - ISP: Usa múltiples servicios especializados en lugar de uno monolítico
  * 
  * Mejoras aplicadas:
  * - Separación de responsabilidades entre múltiples servicios
- * - Cada servicio tiene una responsabilidad única (SRP)
- * - Eliminada dependencia de ServiceShow (mejor separación de concerns)
+ * - Constructor injection para mejor testabilidad
+ * - Cada servicio tiene una responsabilidad única
  */
 @RestController
 @CrossOrigin("*")
-class UsuarioController {
-    @Autowired 
-    lateinit var serviceUsuario: ServiceUsuario
-    
-    @Autowired 
-    lateinit var authenticationService: AuthenticationService
-    
-    @Autowired 
-    lateinit var carritoService: CarritoService
-    
-    @Autowired 
-    lateinit var compraService: CompraService
-    
-    @Autowired 
-    lateinit var amistadService: AmistadService
-    
-    @Autowired 
-    lateinit var comentarioService: ComentarioService
-    
-    @Autowired 
-    lateinit var serviceShow: ServiceShow
+class UsuarioController(
+    private val serviceUsuario: ServiceUsuario,
+    private val authenticationService: AuthenticationService,
+    private val carritoService: CarritoService,
+    private val compraService: CompraService,
+    private val amistadService: AmistadService,
+    private val comentarioService: ComentarioService,
+    private val serviceShow: ServiceShow
+) {
 
     @PostMapping("/usuario-logueado")
     fun traerUsuarioLogin(@RequestBody user: LoginDTO): Any {
@@ -48,19 +40,21 @@ class UsuarioController {
 
     @GetMapping("/user/{idUser}")
     fun getUsuarioComunByID(@PathVariable idUser: Int): Any{
-        return serviceUsuario.getDataUserByID(idUser)
+        return serviceUsuario.obtenerDatosUsuario(idUser)
     }
 
     @GetMapping("/carrito/{idUser}")
     fun getCarrito (@PathVariable idUser : Long) : MutableList<CarritoDTO> {
         return carritoService.obtenerEntradasCarrito(idUser).map { entrada: Entrada ->
-            val show = serviceShow.getShowByID(entrada.showId)
+            val show = serviceShow.findShowById(entrada.showId)
+            val amigosQueVan = amistadService.amigosQueVanAShow(idUser, entrada.showId)
+                .map { UsuarioAmigosDTO.fromAmigosDTO(it) }
             CarritoDTO.toEntradaCarritoDTO(
                 entrada,
                 show,
-                serviceShow.getInstalacionByID(show.instalacionId),
+                serviceShow.findInstalacionById(show.instalacionId),
                 carritoService.getCarritoById(idUser),
-                amistadService.amigosQueVanAShow(idUser, entrada.showId),
+                    amigosQueVan,
             )
         }.toMutableList()
     }
@@ -78,12 +72,12 @@ class UsuarioController {
 
     @PatchMapping("/editar-datos-usuario/{idUser}")
     fun editarDatosUsuario (@PathVariable idUser : Int, @RequestBody user: UsuarioEditarDTO) {
-        serviceUsuario.editarDatos(idUser, user.nombre, user.apellido)
+        serviceUsuario.actualizarDatosPersonales(idUser, user.nombre, user.apellido)
     }
 
     @PatchMapping("/sumar-credito/{idUser}/{credito}")
     fun sumarCredito (@PathVariable idUser : Long, @PathVariable credito : Double) {
-        serviceUsuario.sumarCredito(idUser, credito)
+        serviceUsuario.agregarCredito(idUser, credito)
     }
 
     @PutMapping("/agregar-amigo/{idUser}/{idAmigo}")
@@ -99,14 +93,16 @@ class UsuarioController {
     @GetMapping("/entradas-compradas/{idUser}")
     fun getEntradasCompradas (@PathVariable idUser : Long) : MutableList<CarritoDTO> {
         return compraService.obtenerEntradasCompradas(idUser).map { entrada: Entrada ->
-            val show = serviceShow.getShowByID(entrada.showId)
-            val instalacion = serviceShow.getInstalacionByID(show.instalacionId)
+            val show = serviceShow.findShowById(entrada.showId)
+            val instalacion = serviceShow.findInstalacionById(show.instalacionId)
+            val amigosQueVan = amistadService.amigosQueVanAShow(idUser, entrada.showId)
+                .map { UsuarioAmigosDTO.fromAmigosDTO(it) }
             CarritoDTO.toEntradaCarritoDTO(
                 entrada,
                 show,
                 instalacion,
                 carritoService.getCarritoById(idUser),
-                amistadService.amigosQueVanAShow(idUser, entrada.showId),
+                amigosQueVan,
             )
         }.toMutableList()
     }

@@ -12,6 +12,13 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Period
 
+/**
+ * Clase base abstracta para todos los tipos de usuarios del sistema.
+ * 
+ * Principios aplicados:
+ * - LSP: Los subtipos (UsuarioComun, UsuarioAdmin) son sustituibles por Usuario
+ * - OCP: Abierto para extensión (nuevos tipos de usuario), cerrado para modificación
+ */
 @Entity
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
@@ -31,7 +38,6 @@ abstract class Usuario {
     abstract val esAdmin: Boolean
     abstract var username: String
     abstract var password: String
-
 
     fun calcularIngresosFuturos(show: Show): Double {
         return show.funciones.size * show.costoBanda
@@ -66,21 +72,16 @@ class UsuarioComun(
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     var comentarios: MutableList<Comentario> = mutableListOf()
     fun cambiarNombres(nombre: String, apellido: String) {
-        if (nombre.isNotEmpty() && apellido.isNotEmpty()) {
-            this.nombre = nombre
-            this.apellido = apellido
-        } else {
-            throw UnauthorizedEditData("No puede dejar vacio el campo nombre y/o apellido ")
-        }
-
+        require(nombre.isNotBlank()) { "El nombre no puede estar vacío" }
+        require(apellido.isNotBlank()) { "El apellido no puede estar vacío" }
+        
+        this.nombre = nombre
+        this.apellido = apellido
     }
 
     fun aumentarSaldo(monto: Double) {
-        if (monto > 0.0) {
-            saldo += monto
-        } else {
-            throw SaldoValidationException("El saldo no puede ser negativo o 0")
-        }
+        require(monto > 0.0) { "El monto debe ser mayor a cero" }
+        saldo += monto
     }
 
     fun disminuirSaldo(monto: Double) {
@@ -100,40 +101,48 @@ class UsuarioComun(
     }
 
     fun dejarComentario(show: Show, contenido: String, puntuacion: Float) {
-        val funcionesEntradasId = entradasCompradas.map { it.funcionId }
-        val funcionesShow = show.funciones
-        val funcionEnComun = funcionesShow.filter { funcionesEntradasId.contains(it.id) }
-        if (funcionEnComun.isNotEmpty()) {
-            if (funcionEnComun[0].fecha.isBefore(LocalDate.now())) {
-                if (this.comentarios.all { it.idShow != show.id }) {
-                    val comentarioCompleto = Comentario(
-                        show.id,
-                        this.fotoPerfil,
-                        show.imagen,
-                        this.username,
-                        show.nombreBanda,
-                        LocalDate.now(),
-                        contenido,
-                        puntuacion
-                    )
-                    comentarios.add(comentarioCompleto)
-                } else {
-                    throw ComentarioExistenteException("Ya se ha dejado un comentario en este show")
-                }
-            } else {
-                throw ComentarioTempranoException("Este show todavía no ocurrió")
-            }
-        } else {
+        require(contenido.isNotBlank()) { "El contenido del comentario no puede estar vacío" }
+        require(puntuacion in 0.0..5.0) { "La puntuación debe estar entre 0 y 5" }
+        
+        val funcionesCompradas = entradasCompradas.map { it.funcionId }
+        val funcionesDelShow = show.funciones.filter { funcionesCompradas.contains(it.id) }
+        
+        if (funcionesDelShow.isEmpty()) {
             throw ComentarioSinEntradaException("El usuario no tiene entradas para este show")
         }
+        
+        val primeraFuncion = funcionesDelShow.first()
+        if (primeraFuncion.fecha.isAfter(LocalDate.now()) || primeraFuncion.fecha.isEqual(LocalDate.now())) {
+            throw ComentarioTempranoException("Este show todavía no ocurrió")
+        }
+        
+        if (comentarios.any { it.idShow == show.id }) {
+            throw ComentarioExistenteException("Ya se ha dejado un comentario en este show")
+        }
+        
+        val nuevoComentario = Comentario(
+            show.id,
+            this.fotoPerfil,
+            show.imagen,
+            this.username,
+            show.nombreBanda,
+            LocalDate.now(),
+            contenido,
+            puntuacion
+        )
+        comentarios.add(nuevoComentario)
     }
 
-    fun borrarComentario(idShow: String) {
-        comentarios.removeIf{it.idShow == idShow }
+    fun borrarComentario(showId: String) {
+        comentarios.removeIf { it.idShow == showId }
     }
 }
 
 
+/**
+ * Usuario con permisos de administrador.
+ * Puede gestionar shows y funciones.
+ */
 @Entity
 class UsuarioAdmin(
     @Column(nullable = false)
@@ -151,20 +160,18 @@ class UsuarioAdmin(
 ) : Usuario() {
     @Column
     override var esAdmin = true
+    
     fun agregarFuncion(show: Show, instalacion: Instalacion, fecha: LocalDate, hora: LocalTime) {
-        if (show.showSoldOut()) {
-            val precioBase = show.precioBaseEntrada(instalacion)
-            val ingresosPotenciales = precioBase * instalacion.totalCapacidad()
+        require(show.showSoldOut()) { "Todavía quedan entradas para este show" }
+        
+        val precioBase = show.precioBaseEntrada(instalacion)
+        val ingresosPotenciales = precioBase * instalacion.totalCapacidad()
+        val costoShow = show.costoShow(instalacion)
 
-            val costoShow = show.costoShow(instalacion)
-
-            if (ingresosPotenciales > costoShow) {
-                show.agregarFuncion(fecha, hora, instalacion)
-            } else {
-                throw RuntimeException("Crear una nueva función no es redituable en este momento")
-            }
-        } else {
-            throw RuntimeException("Todavía quedan entradas para este show")
+        require(ingresosPotenciales > costoShow) { 
+            "Crear una nueva función no es redituable en este momento" 
         }
+        
+        show.agregarFuncion(fecha, hora, instalacion)
     }
 }

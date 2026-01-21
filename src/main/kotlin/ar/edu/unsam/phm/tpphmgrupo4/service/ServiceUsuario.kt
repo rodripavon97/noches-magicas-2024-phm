@@ -6,12 +6,14 @@ import ar.edu.unsam.phm.tpphmgrupo4.domain.node.UsuarioNodo
 import ar.edu.unsam.phm.tpphmgrupo4.repositorio.JPARepository.RepositorioUsuarioComun
 import ar.edu.unsam.phm.tpphmgrupo4.repositorio.NeoRepository.RepositorioUsuarioComunNeo4j
 import jakarta.transaction.Transactional
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 /**
  * Servicio responsable de las operaciones básicas de usuarios.
- * Refactorizado siguiendo el principio SRP (Single Responsibility Principle).
+ * 
+ * Principios aplicados:
+ * - SRP: Una sola responsabilidad - operaciones básicas de usuario
+ * - DIP: Depende de abstracciones (repositorios inyectados)
  * 
  * Responsabilidades:
  * - Consulta de datos de usuario
@@ -26,62 +28,43 @@ import org.springframework.stereotype.Service
  * - ComentarioService: gestión de comentarios
  */
 @Service
-class ServiceUsuario {
-    @Autowired
-    lateinit var repositorioUsuarioComun: RepositorioUsuarioComun
-    
-    @Autowired
-    lateinit var repositorioUsuarioNeo: RepositorioUsuarioComunNeo4j
+class ServiceUsuario(
+    private val repositorioUsuarioComun: RepositorioUsuarioComun,
+    private val repositorioUsuarioNeo: RepositorioUsuarioComunNeo4j
+) {
 
-    /**
-     * Obtiene un usuario por su ID.
-     * @param id ID del usuario
-     * @return Usuario encontrado
-     */
-    fun getUserByID(id: Long): UsuarioComun {
-        return repositorioUsuarioComun.findById(id).get()
+    fun findUsuarioById(usuarioId: Long): UsuarioComun {
+        return repositorioUsuarioComun.findById(usuarioId)
+            .orElseThrow { NoSuchElementException("Usuario no encontrado con ID: $usuarioId") }
     }
 
-    /**
-     * Obtiene un nodo de usuario en Neo4j por su nombre de usuario.
-     * @param nombre Nombre de usuario
-     * @return Nodo de usuario
-     */
-    fun getUserNeoByName(nombre: String): UsuarioNodo {
-        return repositorioUsuarioNeo.findUsuarioNodoByUsername(nombre)
+    fun findUsuarioNodoByUsername(username: String): UsuarioNodo {
+        return repositorioUsuarioNeo.findUsuarioNodoByUsername(username)
     }
 
-    /**
-     * Obtiene los datos completos de un usuario por su ID.
-     * @param id ID del usuario
-     * @return DTO con datos del usuario
-     */
     @Transactional(Transactional.TxType.NEVER)
-    fun getDataUserByID(id: Int): UsuarioDTO {
-        return UsuarioDTO.fromUsuario(repositorioUsuarioComun.findById(id.toLong()).get())
+    fun obtenerDatosUsuario(usuarioId: Int): UsuarioDTO {
+        val usuario = repositorioUsuarioComun.findById(usuarioId.toLong())
+            .orElseThrow { NoSuchElementException("Usuario no encontrado con ID: $usuarioId") }
+        return UsuarioDTO.fromUsuario(usuario)
     }
 
-    /**
-     * Edita los datos personales de un usuario (nombre y apellido).
-     * @param idUsuario ID del usuario
-     * @param nombre Nuevo nombre
-     * @param apellido Nuevo apellido
-     */
     @Transactional(Transactional.TxType.NEVER)
-    fun editarDatos(idUsuario: Int, nombre: String, apellido: String) {
-        val usuario = repositorioUsuarioComun.findEditById(idUsuario.toLong()).get()
+    fun actualizarDatosPersonales(usuarioId: Int, nombre: String, apellido: String) {
+        require(nombre.isNotBlank()) { "El nombre no puede estar vacío" }
+        require(apellido.isNotBlank()) { "El apellido no puede estar vacío" }
+        
+        val usuario = repositorioUsuarioComun.findEditById(usuarioId.toLong())
+            .orElseThrow { NoSuchElementException("Usuario no encontrado con ID: $usuarioId") }
         usuario.cambiarNombres(nombre, apellido)
         repositorioUsuarioComun.save(usuario)
     }
 
-    /**
-     * Agrega crédito al saldo de un usuario.
-     * @param idUsuario ID del usuario
-     * @param credito Monto a agregar
-     */
-    fun sumarCredito(idUsuario: Long, credito: Double) {
-        val usuario = getUserByID(idUsuario)
-        usuario.aumentarSaldo(credito)
+    fun agregarCredito(usuarioId: Long, monto: Double) {
+        require(monto > 0) { "El monto debe ser mayor a cero" }
+        
+        val usuario = findUsuarioById(usuarioId)
+        usuario.aumentarSaldo(monto)
         repositorioUsuarioComun.save(usuario)
     }
 }
